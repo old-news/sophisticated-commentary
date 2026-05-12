@@ -10,7 +10,7 @@ Add this page's URL to your vim.pack list, then set up the package:
 vim.pack.add({
     'https://github.com/old-news/sophisticated-commentary'
 })
-require('sophisticated-commentary').setup {}
+require('sophisticated-commentary').setup()
 ```
 
 ### Using lazy.vim
@@ -35,9 +35,9 @@ Currently, the only thing you can customize is the keymap. To do so, set the key
 ### vim.pack
 
 ```lua
-require('sophisticated-commentary').setup {
+require('sophisticated-commentary').setup({
     keymap='<C-3>'
-}
+})
 ```
 
 ### lazy.vim

@@ -58,9 +58,9 @@ function Module.putLine(number, text)
 	vim.api.nvim_buf_set_lines(0, number, number + 1, false, { text })
 end
 
-function Module.setup(options)
-	options = options or {}
-	local keymap = options.keymap or '<C-_>'
+function Module.setup(opts)
+	opts = opts or {}
+	local keymap = opts.keymap or '<C-_>'
 
 	vim.keymap.set({'n', 'i', 'v'}, keymap, function()
 		-- Supply the adding of comments
