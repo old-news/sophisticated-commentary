@@ -1,8 +1,8 @@
 # Sophisticated Commentary
-I created this NeoVim plugin because I liked the VScode Ctrl+/ comments. With NeoVim, you have to type a few more keys, which is unnacceptable. Therefore, this plugin was made. Please enjoy!
+I created this NeoVim plugin because I liked the VScode `<Ctrl+/>` comments. With NeoVim, you have to type a few more keys, which is unnacceptable. Therefore, this plugin was made. Please enjoy!
 
 ## Installation
-In your init.lua file (located in your ~/.config/nvim/ directory), you must install and set up the package.<br>
+In your `init.lua` file (located in your `~/.config/nvim/` directory), you must install and set up the package.<br>
 
 ### Using vim.pack
 Add this page's URL to your vim.pack list, then set up the package:
@@ -26,7 +26,7 @@ require('sophisticated-commentary').setup {}
 You're all set!
 
 ## Usage
-Simply type <Ctrl+/> in any mode to comment/uncomment the current line.
+Simply type `<Ctrl+/>` in any mode to comment/uncomment the current line.
 If you're in visual mode, the currently selected block will be commented/uncommented instead.
 
 ## Customization
