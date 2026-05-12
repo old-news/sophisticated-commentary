@@ -29,16 +29,22 @@ end
 
 function Module.removeComment(line, comment, blockEnd)
 	local removeEnd = blockEnd or false
-	if not Module.lineHasComment(line, comment, blockEnd) then
-		return line
-	end
+	local subbed = line
+	if 'string' == type(comment) then
+		comment = {comment} end
 
-	if removeEnd then
-		return string.sub(line, 1, #line - #comment)
-	end
+	for i,cmt in ipairs(comment) do
+		if not Module.lineHasComment(line, cmt, blockEnd) then
+			break end
 
-	local indent = Module.getIndent(line)
-	local subbed = Module.getIndentString(line, indent) .. string.sub(line, indent + #comment)
+		if removeEnd and Module.lineHasComment(line, cmt, removeEnd) then
+			return string.sub(line, 1, #line - #comment) end
+
+		local indent = Module.getIndent(line)
+		subbed = Module.getIndentString(line, indent) .. string.sub(line, indent + #comment + 1)
+		if line ~= subbed then
+			break end
+	end
 	return subbed
 end
 
@@ -145,25 +151,13 @@ function Module.setup(opts)
 			else
 				-- Module.removeLine(startRow)
 				-- Module.removeLine(stopRow)
-				local startRemoved = Module.removeComment(startLine, blockStart, false)
-				if startLine == startRemoved then
-					startRemoved = Module.removeComment(startLine, blockDecorator, false)
-					if startLine == startRemoved then
-						startRemoved = Module.removeComment(startLine, cmt, false) end
-				end
+				local startRemoved = Module.removeComment(startLine, { blockStart, blockDecorator, cmt }, false)
 				Module.putLine(startRow, startRemoved)
-
-				local endRemoved = Module.removeComment(endLine, blockEnd, false)
-				if endLine == endRemoved then
-					endRemoved = Module.removeComment(endLine, blockDecorator, false)
-					if endLine == endRemoved then
-						endRemoved = Module.removeComment(endLine, cmt, false) end
-				end
+				local endRemoved = Module.removeComment(endLine, { blockEnd, blockDecorator, cmt }, false)
 				Module.putLine(stopRow, endRemoved)
 			end
 			beginRow = beginRow + 1
 			endRow = endRow - 1
-			cmt = blockDecorator
 		end
 
 		for line = beginRow, endRow do
@@ -172,7 +166,7 @@ function Module.setup(opts)
 			if addComment then
 				newText = Module.addComment(currentLine, cmt, false)
 			else
-				newText = Module.removeComment(currentLine, cmt, false)
+				newText = Module.removeComment(currentLine, { cmt, blockDecorator }, false)
 			end
 			-- Module.insertLine(line, newText)
 			Module.putLine(line, newText)
