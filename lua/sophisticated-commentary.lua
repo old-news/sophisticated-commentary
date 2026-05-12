@@ -1,5 +1,63 @@
 local Module = {}
 
+function Module.getIndent(line)
+	-- This only matches comments at the start of a line, or immediately following whitespace.
+	-- Therefore, inline comments will only be recognized if they begin the line.
+	-- This preserves comments that come after some code on the same line.
+	return #string.match(line, "%s*") + 1
+end
+
+function Module.addComment(line, comment, blockEnd)
+	local addEnd = blockEnd or false
+	if Module.lineHasComment(line, comment, addEnd) then
+		return line
+	end
+
+	if addEnd then
+		return line .. ' ' .. comment
+	end
+
+	local indent = Module.getIndent(line)
+	-- The below line makes comment string have the same indent as the text instead of being left-justified
+	local subbed = string.sub(line, 1, indent - 1) .. comment .. ' ' .. string.sub(line, indent + #comment - 2)
+	return subbed
+end
+
+function Module.removeComment(line, comment, blockEnd)
+	local removeEnd = blockEnd or false
+	if not Module.lineHasComment(line, comment, blockEnd) then
+		return line
+	end
+
+	if removeEnd then
+		return string.sub(line, 1, #line - #comment)
+	end
+
+	local indent = Module.getIndent(line)
+	local subbed = string.sub(line, 1, indent - 1) .. string.sub(line, indent + #comment + 1)
+	return subbed
+end
+
+function Module.lineHasComment(line, comment, blockEnd)
+	local checkEnd = blockEnd or false
+	if checkEnd then
+		-- For checking blockEnds of block comments
+		return string.sub(line, #line - #comment) ~= nil
+	end
+
+	local indent = Module.getIndent(line)
+	local removedIndent = string.sub(line, indent)
+	return string.sub(removedIndent, 1, #comment) == comment
+end
+
+function Module.getLine(number)
+	return vim.api.nvim_buf_get_lines(0, number, number + 1, false)[1]
+end
+
+function Module.putLine(number, text)
+	vim.api.nvim_buf_set_lines(0, number, number + 1, false, { text })
+end
+
 function Module.setup(options)
 	options = options or {}
 	local keymap = options.keymap or '<C-_>'
@@ -49,6 +107,11 @@ function Module.setup(options)
 		end
 
 		-- if addComment and isBlockComment then
+			-- local firstLine = vim.api.nvim_buf_get_lines(0, startRow, startRow + 1, false)[1]
+			-- vim.api.nvim_buf_set_lines(0, startRow, startRow + 1, false, { blockStart .. ' ' .. firstLine })
+			-- local lastLine = vim.api.nvim_buf_get_lines(0, stopRow, stopRow + 1, false)[1]
+			-- vim.api.nvim_buf_set_lines(0, stopRow, stopRow + 1, false, { lastLine .. ' ' .. blockEnd })
+		-- elseif addComment and not isBlockComment then
 			-- local firstLine = vim.api.nvim_buf_get_lines(0, startRow, startRow + 1, false)[1]
 			-- vim.api.nvim_buf_set_lines(0, startRow, startRow + 1, false, { blockStart .. ' ' .. firstLine })
 			-- local lastLine = vim.api.nvim_buf_get_lines(0, stopRow, stopRow + 1, false)[1]
