@@ -132,15 +132,15 @@ function Module.setup(opts)
 		if isMultilineComment then
 			if addComment then
 				local indent = Module.getIndent(startRow)
+				Module.insertLine(endRow + 1, string.rep(' ', indent) .. blockEnd)
 				Module.insertLine(startRow, string.rep(' ', indent) .. blockStart)
-				Module.insertLine(endRow, string.rep(' ', indent) .. blockEnd)
 				-- Module.addComment(startRow, blockStart, false)
 				-- Module.addComment(endRow, blockEnd, true)
 			else
 				-- Module.removeLine(startRow)
 				-- Module.removeLine(stopRow)
-				Module.putLine(startRow, Module.removeComment(startRow, blockStart, false))
-				Module.putLine(stopRow, Module.removeComment(stopRow, blockEnd, false))
+				Module.putLine(startRow, Module.removeComment(Module.getLine(startRow), blockStart, false))
+				Module.putLine(stopRow, Module.removeComment(Module.getLine(stopRow), blockEnd, false))
 			end
 			beginRow = beginRow + 1
 			endRow = endRow - 1
