@@ -1,5 +1,5 @@
 # Sophisticated Commentary
-I created this NeoVim plugin because I liked the VScode Ctrl+/ comments. With NeoVim, you have to type a few more keys, which is unnacceptable. Therefore, this pluginwas made. Please enjoy
+I created this NeoVim plugin because I liked the VScode Ctrl+/ comments. With NeoVim, you have to type a few more keys, which is unnacceptable. Therefore, this plugin was made. Please enjoy!
 
 ## Installation
 In your init.lua file (located in your ~/.config/nvim/ directory), you must install and set up the package.<br>
@@ -43,11 +43,8 @@ require('sophisticated-commentary').setup {
 ### lazy.vim
 
 ```lua
-{
-    "old-news/sophisticated-commentary",
-    opts = {
-        keymap = "<C-3>"
-    }
+opts = {
+    keymap = "<C-3>"
 }
 ```
 
