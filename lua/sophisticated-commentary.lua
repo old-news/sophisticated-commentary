@@ -9,7 +9,7 @@ end
 
 function Module.addComment(line, comment, blockEnd)
 	local addEnd = blockEnd or false
-	if Module.lineHasComment(line, comment, addEnd) then
+	if #line <= #comment or Module.lineHasComment(line, comment, addEnd) then
 		return line
 	end
 
@@ -19,7 +19,7 @@ function Module.addComment(line, comment, blockEnd)
 
 	local indent = Module.getIndent(line)
 	-- The below line makes comment string have the same indent as the text instead of being left-justified
-	local subbed = string.rep(' ', indent) .. comment .. ' ' .. string.sub(line, indent + #comment - 2)
+	local subbed = string.rep(' ', indent - 1) .. comment .. ' ' .. string.sub(line, indent + #comment - 2)
 	return subbed
 end
 
