@@ -5,7 +5,7 @@ I created this NeoVim plugin because I liked the VScode Ctrl+/ comments. With Ne
 In your init.lua, add the following:
 <ul>
     <li>In your vim.pack list, add this page's url</li>
-    <li>Add `require('sophisticated-commentary').setup {}`. </li>
+    <li>Add <code>require('sophisticated-commentary').setup {}</code>. </li>
 </ul>
 You're all set!
 
