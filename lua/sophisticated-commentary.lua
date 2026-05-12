@@ -19,7 +19,7 @@ function Module.addComment(line, comment, blockEnd)
 
 	local indent = Module.getIndent(line)
 	-- The below line makes comment string have the same indent as the text instead of being left-justified
-	local subbed = string.sub(line, 1, indent - 1) .. comment .. ' ' .. string.sub(line, indent + #comment - 2)
+	local subbed = 'hi'--string.rep(' ', indent) .. comment .. ' ' .. string.sub(line, indent + #comment - 2)
 	return subbed
 end
 
@@ -129,32 +129,33 @@ function Module.setup(opts)
 		end
 
 		local beginRow, endRow = startRow, stopRow
-		if isMultilineComment then
-			if addComment then
-				local indent = Module.getIndent(startRow)
-				Module.insertLine(startRow, string.rep(' ', indent) .. blockStart)
-				Module.insertLine(endRow, string.rep(' ', indent) .. blockEnd)
-				-- Module.addComment(startRow, blockStart, false)
-				-- Module.addComment(endRow, blockEnd, true)
-			else
-				-- Module.removeLine(startRow)
-				-- Module.removeLine(stopRow)
-				Module.putLine(startRow, Module.removeComment(startRow, blockStart, false))
-				Module.putLine(stopRow, Module.removeComment(stopRow, blockEnd, false))
-			end
-			beginRow = beginRow + 1
-			endRow = endRow - 1
-			cmt = blockDecorator
-		end
+		-- if isMultilineComment then
+		-- 	if addComment then
+		-- 		local indent = Module.getIndent(startRow)
+		-- 		Module.insertLine(startRow, string.rep(' ', indent) .. blockStart)
+		-- 		Module.insertLine(endRow, string.rep(' ', indent) .. blockEnd)
+		-- 		-- Module.addComment(startRow, blockStart, false)
+		-- 		-- Module.addComment(endRow, blockEnd, true)
+		-- 	else
+		-- 		-- Module.removeLine(startRow)
+		-- 		-- Module.removeLine(stopRow)
+		-- 		Module.putLine(startRow, Module.removeComment(startRow, blockStart, false))
+		-- 		Module.putLine(stopRow, Module.removeComment(stopRow, blockEnd, false))
+		-- 	end
+		-- 	beginRow = beginRow + 1
+		-- 	endRow = endRow - 1
+		-- 	cmt = blockDecorator
+		-- end
 
 		for line = beginRow, endRow do
 			local newText = ''
-			if addComment then
-				newText = Module.addComment(line, cmt, false)
+			if true or addComment then
+				newText = Module.addComment(Module.getLine(line), cmt, false)
 			else
-				newText = Module.removeComment(line, cmt, false)
+				newText = Module.removeComment(Module.getLine(line), cmt, false)
 			end
-			Module.putLine(line, newText)
+			Module.insertLine(line, newText)
+			-- Module.putLine(line, newText)
 		end
 		-- For exiting visual mode
 		vim.api.nvim_feedkeys(vim.keycode'<Esc>', 'n', false)
