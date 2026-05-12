@@ -131,11 +131,11 @@ function Module.setup(opts)
 		local beginRow, endRow = startRow, stopRow
 		if isMultilineComment then
 			if addComment then
-				local indent = Module.getIndent(startRow)
-				Module.insertLine(startRow, string.rep(' ', indent) .. blockStart)
-				Module.insertLine(endRow, string.rep(' ', indent) .. blockEnd)
-				-- Module.addComment(startRow, blockStart, false)
-				-- Module.addComment(endRow, blockEnd, true)
+				-- local indent = Module.getIndent(startRow)
+				-- Module.insertLine(startRow, string.rep(' ', indent) .. blockStart)
+				-- Module.insertLine(endRow, string.rep(' ', indent) .. blockEnd)
+				Module.addComment(startRow, blockStart, false)
+				Module.addComment(endRow, blockEnd, true)
 			else
 				-- Module.removeLine(startRow)
 				-- Module.removeLine(endRow)
@@ -147,7 +147,7 @@ function Module.setup(opts)
 			cmt = blockDecorator
 		end
 
-		for line = startRow, stopRow do
+		for line = beginRow, endRow do
 			if addComment then
 				Module.addComment(line, cmt, false)
 			else
