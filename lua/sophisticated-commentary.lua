@@ -7,6 +7,10 @@ function Module.getIndent(line)
 	return #string.match(line, "%s*") + 1
 end
 
+function Module.getIndentString(line, indent)
+	return string.sub(line, 1, indent - 1)
+end
+
 function Module.addComment(line, comment, blockEnd)
 	local addEnd = blockEnd or false
 	if #line <= #comment or Module.lineHasComment(line, comment, addEnd) then
@@ -19,7 +23,7 @@ function Module.addComment(line, comment, blockEnd)
 
 	local indent = Module.getIndent(line)
 	-- The below line makes comment string have the same indent as the text instead of being left-justified
-	local subbed = string.sub(line, 1, indent - 1) .. comment .. ' ' .. string.sub(line, indent + #comment - 2)
+	local subbed = Module.getIndentString(line, indent) .. comment .. ' ' .. string.sub(line, indent + #comment - 2)
 	return subbed
 end
 
@@ -34,7 +38,7 @@ function Module.removeComment(line, comment, blockEnd)
 	end
 
 	local indent = Module.getIndent(line)
-	local subbed = string.sub(line, 1, indent - 1) .. string.sub(line, indent + #comment + 1)
+	local subbed = Module.getIndentString(line, indent) .. string.sub(line, indent + #comment + 1)
 	return subbed
 end
 
@@ -130,17 +134,19 @@ function Module.setup(opts)
 
 		local beginRow, endRow = startRow, stopRow
 		if isMultilineComment then
+			local startLine = Module.getLine(startRow)
+			local endLine = Module.getLine(endRow)
 			if addComment then
 				local indent = Module.getIndent(startRow)
-				Module.insertLine(endRow + 1, string.rep(' ', indent) .. blockEnd)
-				Module.insertLine(startRow, string.rep(' ', indent) .. blockStart)
+				Module.insertLine(endRow + 1, Module.getIndentString(startLine, indent) .. blockEnd)
+				Module.insertLine(startRow, Module.getIndentString(endLine, indent) .. blockStart)
 				-- Module.addComment(startRow, blockStart, false)
 				-- Module.addComment(endRow, blockEnd, true)
 			else
 				-- Module.removeLine(startRow)
 				-- Module.removeLine(stopRow)
-				Module.putLine(startRow, Module.removeComment(Module.getLine(startRow), blockStart, false))
-				Module.putLine(stopRow, Module.removeComment(Module.getLine(stopRow), blockEnd, false))
+				Module.putLine(startRow, Module.removeComment(startLine, blockStart, false))
+				Module.putLine(stopRow, Module.removeComment(endLine, blockEnd, false))
 			end
 			beginRow = beginRow + 1
 			endRow = endRow - 1
