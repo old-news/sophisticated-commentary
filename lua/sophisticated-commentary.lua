@@ -67,12 +67,8 @@ function Module.setup(options)
 				vim.api.nvim_buf_set_lines(0, line, line + 1, false, { subbed })
 			end
 		end
+		-- For exiting visual mode
 		vim.api.nvim_feedkeys(vim.keycode'<Esc>', 'n', false)
-		-- vim.api.nvim_buf_set_text(0, start, start, stop, stop, { tostring(start) })
-
-		-- vim.cmd('I-- <ESC>')
-		-- vim.api.nvim_feedkeys("hello", "I", true)
-		-- vim.api.nvim_put({ cmt }, 'c', true, true)
 	end)
 
 end
