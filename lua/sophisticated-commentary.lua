@@ -19,7 +19,7 @@ function Module.addComment(line, comment, blockEnd)
 
 	local indent = Module.getIndent(line)
 	-- The below line makes comment string have the same indent as the text instead of being left-justified
-	local subbed = 'hi'--string.rep(' ', indent) .. comment .. ' ' .. string.sub(line, indent + #comment - 2)
+	local subbed = string.rep(' ', indent) .. comment .. ' ' .. string.sub(line, indent + #comment - 2)
 	return subbed
 end
 
@@ -149,13 +149,13 @@ function Module.setup(opts)
 
 		for line = beginRow, endRow do
 			local newText = ''
-			if true or addComment then
+			if addComment then
 				newText = Module.addComment(Module.getLine(line), cmt, false)
 			else
 				newText = Module.removeComment(Module.getLine(line), cmt, false)
 			end
-			Module.insertLine(line, newText)
-			-- Module.putLine(line, newText)
+			-- Module.insertLine(line, newText)
+			Module.putLine(line, newText)
 		end
 		-- For exiting visual mode
 		vim.api.nvim_feedkeys(vim.keycode'<Esc>', 'n', false)
