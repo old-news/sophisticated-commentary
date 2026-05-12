@@ -3,9 +3,7 @@ I created this NeoVim plugin because I liked the VScode Ctrl+/ comments. With Ne
 
 ## Installation
 Add this page's url to your vim.pack list.
-Add
-    require('sophisticated-commentary').setup {}
-You're set!
+Add `require('sophisticated-commentary').setup {}`. You're all set!
 
 ## Usage
 Simply type <Ctrl+/> in any mode to comment/uncomment the current line.<br>
