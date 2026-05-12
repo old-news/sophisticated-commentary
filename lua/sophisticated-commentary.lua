@@ -19,7 +19,7 @@ function Module.addComment(line, comment, blockEnd)
 
 	local indent = Module.getIndent(line)
 	-- The below line makes comment string have the same indent as the text instead of being left-justified
-	local subbed = string.rep(' ', indent - 1) .. comment .. ' ' .. string.sub(line, indent + #comment - 2)
+	local subbed = string.sub(line, 1, indent - 1) .. comment .. ' ' .. string.sub(line, indent + #comment - 2)
 	return subbed
 end
 
@@ -122,7 +122,7 @@ function Module.setup(opts)
 		local addComment = false
 		for line = startRow, stopRow do
 			local currentLine = Module.getLine(line)
-			if not Module.lineHasComment(line, cmt, false) and #currentLine >= #cmt then
+			if not Module.lineHasComment(currentLine, cmt, false) and #currentLine >= #cmt then
 				addComment = true
 				break
 			end
@@ -149,10 +149,11 @@ function Module.setup(opts)
 
 		for line = beginRow, endRow do
 			local newText = ''
+			local currentLine = Module.getLine(line)
 			if addComment then
-				newText = Module.addComment(Module.getLine(line), cmt, false)
+				newText = Module.addComment(currentLine, cmt, false)
 			else
-				newText = Module.removeComment(Module.getLine(line), cmt, false)
+				newText = Module.removeComment(currentLine, cmt, false)
 			end
 			-- Module.insertLine(line, newText)
 			Module.putLine(line, newText)
