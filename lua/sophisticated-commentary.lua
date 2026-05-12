@@ -58,14 +58,23 @@ function Module.putLine(number, text)
 	vim.api.nvim_buf_set_lines(0, number, number + 1, false, { text })
 end
 
+function Module.insertLine(number, text)
+	vim.api.nvim_buf_set_lines(0, number, number, false, { text })
+end
+
+function Module.removeLine(number)
+	vim.api.nvim_buf_set_lines(0, number, number + 1, false, { '' })
+end
+
 function Module.getCommentStyle(filetype)
 	-- blockstatus:
 	-- 	0 - Language does not support block comments (python)
 	-- 	1 - Language does support block comments (c, c++, css, javascript, ...)
 	-- 	2 - The only type of comment for the language is block. No inline comments allowed! (html)
-	local cmt = '//'
+	local cmt = ''
 	local blockStart = ''
 	local blockEnd = ''
+	local blockDecorator = ''
 	local blockStatus = 0
 	if 'lua' == filetype then
 		cmt = '--'
@@ -79,8 +88,14 @@ function Module.getCommentStyle(filetype)
 		blockStart = '<--'
 		blockEnd = '-->'
 		blockStatus = 2
+	else
+		cmt = '//'
+		blockStart = '/*'
+		blockEnd = ' */'
+		blockDecorator = ' *'
+		blockStatus = 1
 	end
-	return cmt, blockStart, blockEnd, blockStatus
+	return cmt, blockStart, blockEnd, blockDecorator, blockStatus
 end
 
 function Module.setup(opts)
@@ -90,7 +105,7 @@ function Module.setup(opts)
 	vim.keymap.set({'n', 'i', 'v'}, keymap, function()
 		-- Supply the adding of comments
 		local isMultilineComment = false
-		local cmt, blockStart, blockEnd, blockStatus = Module.getCommentStyle(vim.bo.filetype)
+		local cmt, blockStart, blockEnd, blockDecorator, blockStatus = Module.getCommentStyle(vim.bo.filetype)
 
 		local startRow = vim.fn.line("v") - 1
 		local stopRow = vim.fn.line('.') - 1
@@ -98,7 +113,7 @@ function Module.setup(opts)
 			startRow, stopRow = stopRow, startRow
 		end
 
-		if stopRow - startRow > 0 and (cmt == '//' or cmt == '--') then
+		if stopRow - startRow > 0 and 0 < blockStatus then
 			isMultilineComment = true
 		end
 
@@ -111,6 +126,25 @@ function Module.setup(opts)
 				addComment = true
 				break
 			end
+		end
+
+		local beginRow, endRow = startRow, stopRow
+		if isMultilineComment then
+			if addComment then
+				local indent = Module.getIndent(startRow)
+				Module.insertLine(startRow, string.rep(' ', indent) .. blockStart)
+				Module.insertLine(endRow, string.rep(' ', indent) .. blockEnd)
+				-- Module.addComment(startRow, blockStart, false)
+				-- Module.addComment(endRow, blockEnd, true)
+			else
+				-- Module.removeLine(startRow)
+				-- Module.removeLine(endRow)
+				Module.removeComment(startRow, blockStart, false)
+				Module.removeComment(endRow, blockEnd, true)
+			end
+			beginRow = beginRow + 1
+			endRow = endRow - 1
+			cmt = blockDecorator
 		end
 
 		for line = startRow, stopRow do
