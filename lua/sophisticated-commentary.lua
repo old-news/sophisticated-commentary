@@ -38,7 +38,7 @@ function Module.removeComment(line, comment, blockEnd)
 	end
 
 	local indent = Module.getIndent(line)
-	local subbed = Module.getIndentString(line, indent) .. string.sub(line, indent + #comment + 1)
+	local subbed = Module.getIndentString(line, indent) .. string.sub(line, indent + #comment)
 	return subbed
 end
 
@@ -145,8 +145,21 @@ function Module.setup(opts)
 			else
 				-- Module.removeLine(startRow)
 				-- Module.removeLine(stopRow)
-				Module.putLine(startRow, Module.removeComment(startLine, blockStart, false))
-				Module.putLine(stopRow, Module.removeComment(endLine, blockEnd, false))
+				local startRemoved = Module.removeComment(startLine, blockStart, false)
+				if startLine == startRemoved then
+					startRemoved = Module.removeComment(startLine, blockDecorator, false)
+					if startLine == startRemoved then
+						startRemoved = Module.removeComment(startLine, cmt, false) end
+				end
+				Module.putLine(startRow, startRemoved)
+
+				local endRemoved = Module.removeComment(endLine, blockEnd, false)
+				if endLine == endRemoved then
+					endRemoved = Module.removeComment(endLine, blockDecorator, false)
+					if endLine == endRemoved then
+						endRemoved = Module.removeComment(endLine, cmt, false) end
+				end
+				Module.putLine(stopRow, endRemoved)
 			end
 			beginRow = beginRow + 1
 			endRow = endRow - 1
