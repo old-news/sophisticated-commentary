@@ -12,10 +12,14 @@ function Module.getIndentString(line, indent)
 	return string.sub(line, 1, indent - 1)
 end
 
+function Module.lineIsWSpace(line)
+	return 0 == #string.gsub(line, '%s*', '')
+end
+
 function Module.addComment(line, comment, blockEnd, commentMatchesIndentation)
 	local addEnd = blockEnd or false
-	local matchIndent = commentMatchesIndentation or false
-	if Module.lineHasComment(line, comment, addEnd) or 0 == #string.gsub(line, '%s*', '') then
+	local matchIndent = commentMatchesIndentation and true
+	if Module.lineHasComment(line, comment, addEnd) or Module.lineIsWSpace(line) then
 		return line
 	end
 
@@ -27,9 +31,9 @@ function Module.addComment(line, comment, blockEnd, commentMatchesIndentation)
 	-- The below line makes comment string have the same indent as the text instead of being left-justified
 	local subbed = string.sub(line, indent + #comment - 2)
 	if matchIndent then
-		subbed = comment .. ' ' .. Module.getIndentString(line, indent) .. subbed
-	else
 		subbed = Module.getIndentString(line, indent) .. comment .. ' ' .. subbed
+	else
+		subbed = comment .. ' ' .. Module.getIndentString(line, indent) .. subbed
 	end
 	return subbed
 end
@@ -41,9 +45,9 @@ function Module.removeComment(line, comment, blockEnd)
 		comment = {comment} end
 
 	for i,cmt in ipairs(comment) do
-		if Module.lineHasComment(line, cmt, blockEnd) then
+		if Module.lineHasComment(line, cmt, removeEnd) then
 			if removeEnd and Module.lineHasComment(line, cmt, removeEnd) then
-				return string.sub(line, 1, #line - #comment) end
+				return string.sub(line, 1, #line - #cmt) end
 
 			subbed = string.gsub(line, cmt:gsub('([^%w])', '%%%1') .. '%s*', '', 1)
 			if line ~= subbed then
@@ -138,18 +142,35 @@ function Module.setup(opts)
 			isMultilineComment = true
 		end
 
-		local addComment = true
+		local addComment = false
 		local multilineTags = {false, false}
 		if isMultilineComment then
+			addComment = true
 			-- Expand comment if selection contains a multiline comment
 			local containsStart = false
 			local containsEnd = false
 			for line = startRow, stopRow do
 				local currentLine = Module.getLine(line)
 				if Module.lineHasComment(currentLine, blockStart, false) then
-					containsStart = true end
+					containsStart = true
+					local subbed = Module.removeComment(currentLine, blockStart, false)
+					if Module.lineIsWSpace(subbed) then
+						Module.removeLine(line)
+						line = line - 1
+					else
+						Module.putLine(line, subbed)
+					end
+				end
 				if Module.lineHasComment(currentLine, blockEnd, false) then
-					containsEnd = true end
+					containsEnd = true
+					local subbed = Module.removeComment(currentLine, blockEnd, true)
+					if Module.lineIsWSpace(subbed) then
+						Module.removeLine(line)
+						line = line - 1
+					else
+						Module.putLine(line, subbed)
+					end
+				end
 			end
 			if containsStart and containsEnd then
 				addComment = false end
@@ -171,9 +192,11 @@ function Module.setup(opts)
 			local startLine = Module.getLine(startRow)
 			local endLine = Module.getLine(endRow)
 			if addComment then
-				local indent = Module.getIndent(startRow)
-				Module.insertLine(endRow + 1, Module.getIndentString(startLine, indent) .. blockEnd)
-				Module.insertLine(startRow, Module.getIndentString(endLine, indent) .. blockStart)
+				local indent = Module.getIndent(startLine)
+				if not multilineTags[0] then
+					Module.insertLine(endRow + 1, Module.getIndentString(endLine, indent) .. blockEnd) end
+				if not multilineTags[1] then
+					Module.insertLine(startRow, Module.getIndentString(startLine, indent) .. blockStart) end
 				-- Module.addComment(startRow, blockStart, false)
 				-- Module.addComment(endRow, blockEnd, true)
 				endRow = endRow + 1
@@ -192,21 +215,23 @@ function Module.setup(opts)
 		local insertComment = cmt
 		if isMultilineComment then
 			insertComment = blockDecorator end
-		if 0 ~= #insertComment then
+		if 0 ~= #insertComment or true then
 			for line = beginRow, endRow do
 				local newText = ''
 				local currentLine = Module.getLine(line)
 				if addComment then
-					newText = Module.addComment(currentLine, insertComment, false, isMultilineComment)
+					newText = Module.addComment(currentLine, insertComment, false, not (isMultilineComment and 0 ~= #insertComment))
 				else
 					newText = Module.removeComment(currentLine, { cmt, blockDecorator }, false)
 				end
-				if isMultilineComment then
-					if multilineTags[0] and Module.lineHasComment(currentLine, blockStart, false) then
-						newText = Module.removeComment(currentLine, blockStart, false) end
-					if multilineTags[1] and Module.lineHasComment(currentLine, blockEnd, false) then
-						newText = Module.removeComment(currentLine, blockEnd, false) end
-				end
+				-- if isMultilineComment then
+					-- if multilineTags[0] then
+						-- newText = Module.removeComment(currentLine, blockStart, false) end
+					-- if multilineTags[1] then
+						-- newText = Module.removeComment(currentLine, blockEnd, true) end
+					-- newText = Module.removeComment(currentLine, blockStart, false)
+					-- newText = Module.removeComment(currentLine, blockEnd, true)
+				-- end
 				-- Module.insertLine(line, newText)
 				Module.putLine(line, newText)
 			end
