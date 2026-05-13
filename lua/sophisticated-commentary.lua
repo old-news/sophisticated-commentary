@@ -5,15 +5,17 @@ function Module.getIndent(line)
 	-- Therefore, inline comments will only be recognized if they begin the line.
 	-- This preserves comments that come after some code on the same line.
 	return #string.match(line, "%s*") + 1
+	-- return #line:match('%s*') + 1
 end
 
 function Module.getIndentString(line, indent)
 	return string.sub(line, 1, indent - 1)
 end
 
-function Module.addComment(line, comment, blockEnd)
+function Module.addComment(line, comment, blockEnd, commentMatchesIndentation)
 	local addEnd = blockEnd or false
-	if #line <= #comment or Module.lineHasComment(line, comment, addEnd) then
+	local matchIndent = commentMatchesIndentation or false
+	if Module.lineHasComment(line, comment, addEnd) or 0 == #string.gsub(line, '%s*', '') then
 		return line
 	end
 
@@ -23,7 +25,12 @@ function Module.addComment(line, comment, blockEnd)
 
 	local indent = Module.getIndent(line)
 	-- The below line makes comment string have the same indent as the text instead of being left-justified
-	local subbed = Module.getIndentString(line, indent) .. comment .. ' ' .. string.sub(line, indent + #comment - 2)
+	local subbed = string.sub(line, indent + #comment - 2)
+	if matchIndent then
+		subbed = comment .. ' ' .. Module.getIndentString(line, indent) .. subbed
+	else
+		subbed = Module.getIndentString(line, indent) .. comment .. ' ' .. subbed
+	end
 	return subbed
 end
 
@@ -34,16 +41,14 @@ function Module.removeComment(line, comment, blockEnd)
 		comment = {comment} end
 
 	for i,cmt in ipairs(comment) do
-		if not Module.lineHasComment(line, cmt, blockEnd) then
-			break end
+		if Module.lineHasComment(line, cmt, blockEnd) then
+			if removeEnd and Module.lineHasComment(line, cmt, removeEnd) then
+				return string.sub(line, 1, #line - #comment) end
 
-		if removeEnd and Module.lineHasComment(line, cmt, removeEnd) then
-			return string.sub(line, 1, #line - #comment) end
-
-		local indent = Module.getIndent(line)
-		subbed = Module.getIndentString(line, indent) .. string.sub(line, indent + #comment + 1)
-		if line ~= subbed then
-			break end
+			subbed = string.gsub(line, cmt:gsub('([^%w])', '%%%1') .. '%s*', '', 1)
+			if line ~= subbed then
+				break end
+		end
 	end
 	return subbed
 end
@@ -78,9 +83,10 @@ end
 
 function Module.getCommentStyle(filetype)
 	-- blockstatus:
-	-- 	0 - Language does not support block comments (python)
+	-- 	0 - Language does not support block comments (bash)
 	-- 	1 - Language does support block comments (c, c++, css, javascript, ...)
-	-- 	2 - The only type of comment for the language is block. No inline comments allowed! (html)
+	-- 	2 - Block comments are preferred for multiline comments
+	-- 	3 - The only type of comment for the language is block. No inline comments allowed! (html)
 	local cmt = ''
 	local blockStart = ''
 	local blockEnd = ''
@@ -90,14 +96,19 @@ function Module.getCommentStyle(filetype)
 		cmt = '--'
 		blockStart = '--[' .. '['
 		blockEnd = ']]'
+		blockDecorator = ' -'
 		blockStatus = 1
 	elseif 'python' == filetype then
 		cmt = '#'
-		blockStatus = 0
+		blockStart = '"""'
+		blockEnd = '"""'
+		-- blockDecorator = '#'
+		blockStatus = 1
 	elseif 'html' == filetype then
-		blockStart = '<--'
+		-- cmt = '~'
+		blockStart = '<!--'
 		blockEnd = '-->'
-		blockStatus = 2
+		blockStatus = 3
 	else
 		cmt = '//'
 		blockStart = '/*'
@@ -114,8 +125,8 @@ function Module.setup(opts)
 
 	vim.keymap.set({'n', 'i', 'v'}, keymap, function()
 		-- Supply the adding of comments
-		local isMultilineComment = false
 		local cmt, blockStart, blockEnd, blockDecorator, blockStatus = Module.getCommentStyle(vim.bo.filetype)
+		local isMultilineComment = blockStatus >= 3
 
 		local startRow = vim.fn.line("v") - 1
 		local stopRow = vim.fn.line('.') - 1
@@ -123,18 +134,35 @@ function Module.setup(opts)
 			startRow, stopRow = stopRow, startRow
 		end
 
-		if stopRow - startRow > 0 and 0 < blockStatus then
+		if stopRow - startRow > 0 and blockStatus >= 2 then
 			isMultilineComment = true
 		end
 
-		-- Add comment if any of the selection contains a comment
-		-- Otherwise, remove the comment
-		local addComment = false
-		for line = startRow, stopRow do
-			local currentLine = Module.getLine(line)
-			if not Module.lineHasComment(currentLine, cmt, false) and #currentLine >= #cmt then
-				addComment = true
-				break
+		local addComment = true
+		local multilineTags = {false, false}
+		if isMultilineComment then
+			-- Expand comment if selection contains a multiline comment
+			local containsStart = false
+			local containsEnd = false
+			for line = startRow, stopRow do
+				local currentLine = Module.getLine(line)
+				if Module.lineHasComment(currentLine, blockStart, false) then
+					containsStart = true end
+				if Module.lineHasComment(currentLine, blockEnd, false) then
+					containsEnd = true end
+			end
+			if containsStart and containsEnd then
+				addComment = false end
+			multilineTags = { containsStart, containsEnd }
+		else
+			-- Add comment if any of the selection contains a comment
+			-- Otherwise, remove the comment
+			for line = startRow, stopRow do
+				local currentLine = Module.getLine(line)
+				if not Module.lineHasComment(currentLine, cmt, false) and #currentLine >= #cmt then
+					addComment = true
+					break
+				end
 			end
 		end
 
@@ -148,6 +176,7 @@ function Module.setup(opts)
 				Module.insertLine(startRow, Module.getIndentString(endLine, indent) .. blockStart)
 				-- Module.addComment(startRow, blockStart, false)
 				-- Module.addComment(endRow, blockEnd, true)
+				endRow = endRow + 1
 			else
 				-- Module.removeLine(startRow)
 				-- Module.removeLine(stopRow)
@@ -155,21 +184,32 @@ function Module.setup(opts)
 				Module.putLine(startRow, startRemoved)
 				local endRemoved = Module.removeComment(endLine, { blockEnd, blockDecorator, cmt }, false)
 				Module.putLine(stopRow, endRemoved)
+				endRow = endRow - 1
 			end
 			beginRow = beginRow + 1
-			endRow = endRow - 1
 		end
 
-		for line = beginRow, endRow do
-			local newText = ''
-			local currentLine = Module.getLine(line)
-			if addComment then
-				newText = Module.addComment(currentLine, cmt, false)
-			else
-				newText = Module.removeComment(currentLine, { cmt, blockDecorator }, false)
+		local insertComment = cmt
+		if isMultilineComment then
+			insertComment = blockDecorator end
+		if 0 ~= #insertComment then
+			for line = beginRow, endRow do
+				local newText = ''
+				local currentLine = Module.getLine(line)
+				if addComment then
+					newText = Module.addComment(currentLine, insertComment, false, isMultilineComment)
+				else
+					newText = Module.removeComment(currentLine, { cmt, blockDecorator }, false)
+				end
+				if isMultilineComment then
+					if multilineTags[0] and Module.lineHasComment(currentLine, blockStart, false) then
+						newText = Module.removeComment(currentLine, blockStart, false) end
+					if multilineTags[1] and Module.lineHasComment(currentLine, blockEnd, false) then
+						newText = Module.removeComment(currentLine, blockEnd, false) end
+				end
+				-- Module.insertLine(line, newText)
+				Module.putLine(line, newText)
 			end
-			-- Module.insertLine(line, newText)
-			Module.putLine(line, newText)
 		end
 		-- For exiting visual mode
 		vim.api.nvim_feedkeys(vim.keycode'<Esc>', 'n', false)
