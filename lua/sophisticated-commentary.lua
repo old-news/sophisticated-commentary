@@ -277,7 +277,7 @@ function Module.applyComments()
 		startRow, stopRow = stopRow, startRow
 	end
 	local isMultilineComment = blockStatus >= 3
-	if stopRow - startRow >= 1 and blockStatus >= Module.blockCommentThreshold then
+	if stopRow - startRow >= 1 and blockStatus >= Module.blockCommentThreshold - 1 and blockStatus ~= 0 then
 		isMultilineComment = true
 	end
 
