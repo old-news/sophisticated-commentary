@@ -1,58 +1,44 @@
 local Module = {}
+Module.languageComments = {}
 
-function Module.getIndent(line)
-	-- This only matches comments at the start of a line, or immediately following whitespace.
-	-- Therefore, inline comments will only be recognized if they begin the line.
-	-- This preserves comments that come after some code on the same line.
-	return #string.match(line, "%s*") + 1
-	-- return #line:match('%s*') + 1
+function Module.getLeadingWSpace(line)
+	return line:match('^%s*')
 end
 
-function Module.getIndentString(line, indent)
-	return string.sub(line, 1, indent - 1)
-end
-
-function Module.lineIsWSpace(line)
+function Module.stringIsWSpace(line)
 	return 0 == #string.gsub(line, '%s*', '')
 end
 
 function Module.addComment(line, comment, lookatEnd, commentMatchesIndentation)
 	lookatEnd = lookatEnd or false
 	local matchIndent = commentMatchesIndentation and true
-	if Module.lineHasComment(line, comment, lookatEnd) or Module.lineIsWSpace(line) then
-		return line
-	end
+	if Module.lineHasComment(line, comment, lookatEnd) or Module.stringIsWSpace(line) then
+		return line end
 
 	if lookatEnd then
-		return line .. ' ' .. comment
-	end
+		return line .. ' ' .. comment end
 
-	local indent = Module.getIndent(line)
-	-- The below line makes comment string have the same indent as the text instead of being left-justified
-	local subbed = string.gsub(line, "^%s*" .. Module.patEscape(comment), '')
-	-- local subbed = string.sub(line, indent + #comment - 2)
 	if matchIndent then
-		-- subbed = Module.getIndentString(line, indent) .. comment .. ' ' .. subbed
-		subbed = string.match(line, "^%s*") .. comment .. ' ' .. string.gsub(line, "^%s*", '')
+		-- The below line makes comment string have the same indent as the text instead of being left-justified
+		return string.match(line, "^%s*") .. comment .. ' ' .. string.gsub(line, "^%s*", '')
 	else
-		subbed = comment .. ' ' .. line
+		return comment .. ' ' .. line
 	end
-	return subbed
 end
 
 function Module.patEscape(pattern)
 	return pattern:gsub('([^%w])', '%%%1')
 end
 
-function Module.removeComment(line, comment, blockEnd)
-	local removeEnd = blockEnd or false
+function Module.removeComment(line, comment, lookatEnd)
+	lookatEnd = lookatEnd or false
 	local subbed = line
 	if 'string' == type(comment) then
 		comment = {comment} end
 
 	for i,cmt in ipairs(comment) do
-		if Module.lineHasComment(line, cmt, removeEnd) then
-			if removeEnd and Module.lineHasComment(line, cmt, removeEnd) then
+		if Module.lineHasComment(line, cmt, lookatEnd) then
+			if lookatEnd and Module.lineHasComment(line, cmt, lookatEnd) then
 				return string.sub(line, 1, #line - #cmt) end
 
 			subbed = string.gsub(line, Module.patEscape(cmt) .. '%s*', '', 1)
@@ -64,7 +50,10 @@ function Module.removeComment(line, comment, blockEnd)
 end
 
 function Module.removePutRCiwSpace(number, subbed)
-	if Module.lineIsWSpace(subbed) then
+	-- Remove comment from line
+	-- If line is empty, remove
+	-- Otherwise, putLine
+	if Module.stringIsWSpace(subbed) then
 		Module.removeLine(number)
 		return true
 	else
@@ -73,22 +62,16 @@ function Module.removePutRCiwSpace(number, subbed)
 	end
 end
 
-function Module.lineHasComment(line, comment, blockEnd)
-	if Module.lineIsWSpace(comment) then
+function Module.lineHasComment(line, cmt, lookatEnd)
+	if Module.stringIsWSpace(cmt) then
 		return false end
-	local checkEnd = blockEnd or false
-	local pattern = '^%s*' .. Module.patEscape(comment)
-	if checkEnd then
-		pattern = Module.patEscape(comment) .. '%s*$' end
-	-- if checkEnd then
-		-- For checking blockEnds of block comments
-		-- return comment == string.sub(line, #line - #comment + 1)
-	-- end
+	local pattern = nil
+	if lookatEnd then
+		pattern = Module.patEscape(cmt) .. '%s*$'
+	else
+		pattern = '^%s*' .. Module.patEscape(cmt)
+	end
 	return string.match(line, pattern) ~= nil
-
-	-- local indent = Module.getIndent(line)
-	-- local removedIndent = string.sub(line, indent)
-	-- return string.sub(removedIndent, 1, #comment) == comment
 end
 
 function Module.getLine(number)
@@ -101,8 +84,7 @@ end
 
 function Module.insertLine(number, text, matchIndent)
 	if matchIndent then
-		text = string.match(Module.getLine(number), "^%s*") .. text
-	end
+		text = string.match(Module.getLine(number), "^%s*") .. text end
 	vim.api.nvim_buf_set_lines(0, number, number, false, { text })
 end
 
@@ -123,7 +105,7 @@ function Module.getSelectionCommentTypes(startRow, stopRow, cmt, blockStart, blo
 			containsBlockStart = true end
 		if Module.lineHasComment(currentLine, blockEnd, true) then
 			containsBlockEnd = true end
-		if not Module.lineHasComment(currentLine, cmt, false) and not Module.lineIsWSpace(currentLine) then
+		if not Module.lineHasComment(currentLine, cmt, false) and not Module.stringIsWSpace(currentLine) then
 			containsNoncomment = true end
 	end
 	return containsComment, containsNoncomment, containsBlockStart, containsBlockEnd
@@ -131,11 +113,9 @@ end
 
 function Module.commentAddMultiline(startRow, stopRow, blockDecorator, blockStart, blockEnd)
 	local startLine = Module.getLine(startRow)
-	local startIndent = Module.getIndent(startLine)
 	local endLine = Module.getLine(stopRow)
-	local endIndent = Module.getIndent(endLine)
-	Module.insertLine(stopRow + 1, Module.getIndentString(endLine, endIndent) .. blockEnd)
-	Module.insertLine(startRow, Module.getIndentString(startLine, startIndent) .. blockStart)
+	Module.insertLine(stopRow + 1, Module.getLeadingWSpace(endLine) .. blockEnd)
+	Module.insertLine(startRow, Module.getLeadingWSpace(startLine) .. blockStart)
 	Module.commentAddNormal(startRow + 1, stopRow + 1, blockDecorator, true)
 end
 
@@ -150,7 +130,9 @@ function Module.commentAddNormal(startRow, stopRow, cmt, matchIndent)
 end
 
 function Module.commentRemoveNormal(startRow, stopRow, comment)
-	if 0 == #comment then
+	if 'table' ~= type(comment) then
+		comment = { comment } end
+	if 0 == #comment[0] then
 		return end
 	for i = startRow, stopRow do
 		local currentLine = Module.getLine(i)
@@ -159,17 +141,19 @@ function Module.commentRemoveNormal(startRow, stopRow, comment)
 	end
 end
 
-function Module.indexComment(startRow, stopRow, comment, lookatEnd)
+function Module.indexComment(startRow, stopRow, cmt, lookatEnd)
+	-- Return row between 'startRow' and 'stopRow' where 'comment' appears
 	lookatEnd = lookatEnd or false
 	for i = startRow, stopRow do
 		local currentLine = Module.getLine(i)
-		if Module.lineHasComment(currentLine, comment, lookatEnd) then
+		if Module.lineHasComment(currentLine, cmt, lookatEnd) then
 			return i end
 	end
 	return nil
 end
 
 function Module.commentRemoveMultiline(startRow, stopRow, blockDecorator, blockStart, blockEnd)
+	-- Remove multiline comment which is entirely between 'startRow' and 'stopRow'
 	local nStart = Module.indexComment(startRow, stopRow, blockStart, false)
 	local nEnd = Module.indexComment(nStart, stopRow, blockEnd, true)
 	local lineStart = Module.getLine(nStart)
@@ -190,6 +174,7 @@ function Module.commentRemoveMultiline(startRow, stopRow, blockDecorator, blockS
 end
 
 function Module.commentExtendMultiline(startRow, stopRow, blockDecorator, blockSE, isEnd)
+	-- Extend multiline comment
 	local n = Module.indexComment(startRow, stopRow, blockSE, isEnd)
 	local line = Module.getLine(n)
 	local subbed = Module.removeComment(line, blockSE, isEnd)
@@ -204,7 +189,8 @@ function Module.commentExtendMultiline(startRow, stopRow, blockDecorator, blockS
 	end
 end
 
-function Module.isWithinMultilineComment(startRow, stopRow, blockStart, blockEnd)
+function Module.getOuterMultilineCommentRows(startRow, stopRow, blockStart, blockEnd)
+	-- Returns the opening and closing row indexes if the selection is enclosed within a multiline comment
 	local s, e = nil, nil
 	for i = startRow, 0, -1 do
 		local currentLine = Module.getLine(i)
@@ -227,54 +213,63 @@ function Module.isWithinMultilineComment(startRow, stopRow, blockStart, blockEnd
 	return s, e
 end
 
-function Module.getCommentStyle(filetype)
-	-- blockstatus:
-	-- 	0 - Language does not support block comments (bash)
+function Module.getCommentStyle(ft)
+	-- blockstatus (lc[5]):
+	-- 	0 - Language does not support block comments (bash, asm)
 	-- 	1 - Language does support block comments (c, c++, css, javascript, ...)
-	-- 	2 - Block comments are preferred for multiline comments
+	-- 	2 - Block comments are preferred for multiline comments (c-languages)
 	-- 	3 - The only type of comment for the language is block. No inline comments allowed! (html)
-	local cmt = ''
-	local blockStart = ''
-	local blockEnd = ''
-	local blockDecorator = ''
-	local blockStatus = 0
-	if 'lua' == filetype then
-		cmt = '--'
-		blockStart = '--[' .. '['
-		blockEnd = ']]'
-		blockDecorator = ' -'
-		blockStatus = 1
-	elseif 'python' == filetype then
-		cmt = '#'
-		blockStart = '"""'
-		blockEnd = '"""'
-		-- blockDecorator = '#'
-		blockStatus = 1
-	elseif 'html' == filetype then
-		-- cmt = '~'
-		blockStart = '<!--'
-		blockEnd = '-->'
-		blockStatus = 3
-	else
-		cmt = '//'
-		blockStart = '/*'
-		blockEnd = ' */'
-		blockDecorator = ' *'
-		blockStatus = 2
-	end
-	return cmt, blockStart, blockEnd, blockDecorator, blockStatus
+	local lc = Module.languageComments[ft] or Module.languageComments['default']
+	return lc[1] or '', lc[2] or 0, lc[3] or '', lc[4] or '', lc[5] or ''
 end
 
 function Module.setup(opts)
 	opts = opts or {}
+	opts.languages = opts.languages or {}
 	local keymap = opts.keymap or '<C-_>'
-
 	vim.keymap.set({'n', 'i', 'v'}, keymap, Module.applyComments)
+
+	Module.languageComments = {
+		-- {comment, blockStatus, blockStart, blockEnd, blockDecorator}
+		default = {'//', 2, '/*', ' */', ' *'},
+		ada = {'--', 0},
+		asm = {';', 0},
+		css = {'//', 3, '/*', ' */', ' *'},
+		dockerfile = {'#'},
+		elixir = {'#', 1, '"""', '"""'},
+		elm = {'--', 2, '{', '}'},
+		env = {'#', 0},
+		haskell = {'--', 0},
+		html = {'', 3, '<!--', '-->'},
+		lua = {'--', 1, '--[' .. '[', ']]'},
+		python = {'#', 1, '"""', '"""'},
+		sh = {'#', 0},
+		perl = {'#', 2, '=', '=cut'},
+		ps1 = {'#', 2, '<#', '#>'},
+		r = {'#', 0},
+		ruby = {'#', 2, '=begin', '=end'},
+		sql = {'--', 0},
+		php = {'#', 2, '/*', ' */', ' *'},
+		xml = {'', 3, '<!--', '-->'},
+		yaml = {'#', 0},
+	}
+	Module.blockCommentThreshold = opts.blockCommentThreshold or 2
+	if Module.blockCommentThreshold < 1 then
+		Module.blockCommentThreshold = 1 end
+
+	for key, value in pairs(opts.languages) do
+		Module.languageComments[key] = value
+	end
+
+	for key, _ in pairs(Module.languageComments) do
+		if opts.noBlockDecorators then
+			Module.languageComments[key][5] = nil end
+	end
 end
 
 function Module.applyComments()
 	-- Supply the adding of comments
-	local cmt, blockStart, blockEnd, blockDecorator, blockStatus = Module.getCommentStyle(vim.bo.filetype)
+	local cmt, blockStatus, blockStart, blockEnd, blockDecorator = Module.getCommentStyle(vim.bo.filetype)
 
 	local startRow = vim.fn.line("v") - 1
 	local stopRow = vim.fn.line('.') - 1
@@ -282,14 +277,14 @@ function Module.applyComments()
 		startRow, stopRow = stopRow, startRow
 	end
 	local isMultilineComment = blockStatus >= 3
-	if stopRow - startRow >= 1 and 2 == blockStatus then
+	if stopRow - startRow >= 1 and blockStatus >= Module.blockCommentThreshold then
 		isMultilineComment = true
 	end
 
 	local containsComment, containsNoncomment, containsBlockStart, containsBlockEnd = Module.getSelectionCommentTypes(startRow, stopRow, cmt, blockStart, blockEnd)
 	if not containsBlockStart and not containsBlockEnd then
-		local s, e = Module.isWithinMultilineComment(startRow, stopRow, blockStart, blockEnd)
-		if nil ~= s and nil ~= e then
+		local s, e = Module.getOuterMultilineCommentRows(startRow, stopRow, blockStart, blockEnd)
+		if s and e then
 			Module.commentRemoveMultiline(s, e, blockDecorator, blockStart, blockEnd)
 		elseif containsComment and not containsNoncomment then
 			Module.commentRemoveNormal(startRow, stopRow, cmt)
@@ -300,8 +295,8 @@ function Module.applyComments()
 		end
 	else
 		if 0 == startRow - stopRow then
-			local s, e = Module.isWithinMultilineComment(startRow, stopRow, blockStart, blockEnd)
-			if nil ~= s and nil ~= e then
+			local s, e = Module.getOuterMultilineCommentRows(startRow, stopRow, blockStart, blockEnd)
+			if s and e then
 				Module.commentRemoveMultiline(s, e, blockDecorator, blockStart, blockEnd) end
 		elseif containsBlockStart and containsBlockEnd then
 			Module.commentRemoveMultiline(startRow, stopRow, blockDecorator, blockStart, blockEnd)
