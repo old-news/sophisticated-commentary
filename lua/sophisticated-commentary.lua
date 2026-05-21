@@ -132,7 +132,7 @@ end
 function Module.commentRemoveNormal(startRow, stopRow, comment)
 	if 'table' ~= type(comment) then
 		comment = { comment } end
-	if 0 == #comment[0] then
+	if 0 == #comment[1] then
 		return end
 	for i = startRow, stopRow do
 		local currentLine = Module.getLine(i)

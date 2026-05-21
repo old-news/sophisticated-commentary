@@ -1,5 +1,5 @@
 # Sophisticated Commentary
-I created this NeoVim plugin because I liked the VScode `Ctrl+/` keymap to comment/uncomment code. With NeoVim, you have to type a few more keys, which is unnacceptable. Therefore, this plugin was made. Please enjoy!
+I created this NeoVim plugin because I liked the VScode `Ctrl+/` keymap to comment/uncomment code. With NeoVim, you have to type a few more keys, which is unnacceptable. Therefore, this plugin was made. I also extend it's functionality to be better than that of VScode. Please enjoy!
 
 ## Installation
 In your `init.lua` file (located in your `~/.config/nvim/` directory), you must install and set up the package.<br>
