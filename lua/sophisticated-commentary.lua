@@ -235,6 +235,7 @@ function Module.setup(opts)
 		ada = {'--', 0},
 		asm = {';', 0},
 		css = {'//', 3, '/*', ' */', ' *'},
+		conf = {'#', 0},
 		dockerfile = {'#'},
 		elixir = {'#', 1, '"""', '"""'},
 		elm = {'--', 2, '{', '}'},
