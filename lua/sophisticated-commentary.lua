@@ -219,6 +219,9 @@ function Module.getCommentStyle(ft)
 	-- 	1 - Language does support block comments (c, c++, css, javascript, ...)
 	-- 	2 - Block comments are preferred for multiline comments (c-languages)
 	-- 	3 - The only type of comment for the language is block. No inline comments allowed! (html)
+	for token in string.gmatch(ft, "^.+") do
+		ft = token
+	end
 	local lc = Module.languageComments[ft] or Module.languageComments['default']
 	return lc[1] or '', lc[2] or 0, lc[3] or '', lc[4] or '', lc[5] or ''
 end
@@ -234,6 +237,7 @@ function Module.setup(opts)
 		default = {'//', 2, '/*', ' */', ' *'},
 		ada = {'--', 0},
 		asm = {';', 0},
+		cfg = {'#', 0},
 		css = {'//', 3, '/*', ' */', ' *'},
 		conf = {'#', 0},
 		dockerfile = {'#'},
