@@ -219,8 +219,15 @@ function Module.getCommentStyle(ft)
 	-- 	1 - Language does support block comments (c, c++, css, javascript, ...)
 	-- 	2 - Block comments are preferred for multiline comments (c-languages)
 	-- 	3 - The only type of comment for the language is block. No inline comments allowed! (html)
-	for token in string.gmatch(ft, "^.+") do
-		ft = token
+
+	-- This line below accounts for files that have multiple period '.' chars by saying the filetype
+	-- is only after the last period. For example, '.tmux.conf' -> 'conf'
+	local ftMatches = string.match(".tmux.conf", "%.[^%.]*$")
+	if nil ~= ftMatches then
+		ft = string.sub(string.match(".tmux.conf", "%.[^%.]*$"), 2)
+	else
+		-- There is no filetype, so we assume it's a bash script
+		ft = "sh"
 	end
 	local lc = Module.languageComments[ft] or Module.languageComments['default']
 	return lc[1] or '', lc[2] or 0, lc[3] or '', lc[4] or '', lc[5] or ''
@@ -233,12 +240,12 @@ function Module.setup(opts)
 	vim.keymap.set({'n', 'i', 'v'}, keymap, Module.applyComments)
 
 	Module.languageComments = {
-		-- {comment, blockStatus, blockStart, blockEnd, blockDecorator}
+		-- filetype = {comment, blockStatus, blockStart, blockEnd, blockDecorator}
 		default = {'//', 2, '/*', ' */', ' *'},
 		ada = {'--', 0},
 		asm = {';', 0},
-		cfg = {'#', 0},
 		css = {'//', 3, '/*', ' */', ' *'},
+		cfg = {'#', 0},
 		conf = {'#', 0},
 		dockerfile = {'#'},
 		elixir = {'#', 1, '"""', '"""'},
@@ -256,6 +263,7 @@ function Module.setup(opts)
 		sql = {'--', 0},
 		php = {'#', 2, '/*', ' */', ' *'},
 		xml = {'', 3, '<!--', '-->'},
+		yml = {'#', 0},
 		yaml = {'#', 0},
 	}
 	Module.blockCommentThreshold = opts.blockCommentThreshold or 2
