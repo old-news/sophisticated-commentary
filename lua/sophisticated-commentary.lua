@@ -220,14 +220,16 @@ function Module.getCommentStyle(ft)
 	-- 	2 - Block comments are preferred for multiline comments (c-languages)
 	-- 	3 - The only type of comment for the language is block. No inline comments allowed! (html)
 
-	-- This line below accounts for files that have multiple period '.' chars by saying the filetype
+	-- This lines below accounts for files that have multiple period '.' chars by saying the filetype
 	-- is only after the last period. For example, '.tmux.conf' -> 'conf'
-	local ftMatches = string.match(".tmux.conf", "%.[^%.]*$")
-	if nil ~= ftMatches then
-		ft = string.sub(string.match(".tmux.conf", "%.[^%.]*$"), 2)
-	else
-		-- There is no filetype, so we assume it's a bash script
-		ft = "sh"
+	if string.find(ft, "%.") ~= nil then
+		local ftMatches = string.match(ft, "%.[^%.]*$")
+		if nil ~= ftMatches then
+			ft = string.sub(string.match(".tmux.conf", "%.[^%.]*$"), 2)
+		else
+			-- There is no filetype, so we assume it's a bash script
+			ft = "sh"
+		end
 	end
 	local lc = Module.languageComments[ft] or Module.languageComments['default']
 	return lc[1] or '', lc[2] or 0, lc[3] or '', lc[4] or '', lc[5] or ''
