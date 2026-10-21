@@ -29,6 +29,7 @@ You're all set!
 ## Usage
 Simply type `Ctrl+/` in any mode to comment/uncomment the current line.
 If you're in visual mode, the currently selected block will be commented/uncommented instead.
+If you're inside a block comment and uncomment it, the whole block comment will be uncommented instead of just the line.
 
 ## Customizations
 You can apply the following customizations:
@@ -120,15 +121,16 @@ require('sophisticated-commentary').setup({
     blockCommentThreshold = 1
 })
 ```
+You can set an overall blockCommentThreshold for your configuration, and you can also set a blockCommentThreshold for each language. The blockCommentThreshold for an individual language is the second value in the language's config (the `1` in the example  in part 3). <br>
 There are 4 different values for the block comment threshold:<br>
 <dl>
     <dd>0 &mdash; Never do a block comment (language doesn't have block comments)</dd>
-    <dd>1 &mdash; The language supports multiddne docstrings, but not block comments (python)</dd>
+    <dd>1 &mdash; The language supports multiline docstrings, but not block comments (python)</dd>
     <dd>2 &mdash; The language support block comments (c, javascript)</dd>
     <dd>3 &mdash; The language does not support inline comments, so only block comments are allowed (html, xml)</dd>
 </dl>
 
-Every language with a blockCommentThreshold at least as large as the one you set in setup will always do block comments. The languages with a blockCommentThreshold exactly one below the one you set will only do block comments for multiline comments. Languages with a blockCommentThreshold of `0` will never apply block comments. Languages with a blockCommentThreshold will always apply block comments. The default `blockCommentThreshold` is `2`.<br>
+Every language with a blockCommentThreshold at least as large as the one you set in setup will always do block comments. The languages with a blockCommentThreshold exactly one below the one you set will only do block comments for multiline comments. Languages with a blockCommentThreshold of `0` will never apply block comments. Languages with a blockCommentThreshold of `3` will always apply block comments. The default `blockCommentThreshold` is `2`.<br>
 By default, block comments will be applied to multiline C comments, but not to multiline python comments. This behavior is displayed below:
 ```python
 # Here is a
