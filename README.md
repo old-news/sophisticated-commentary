@@ -39,7 +39,7 @@ You can apply the following customizations:
     <li>Set how block comments are applied</li>
 </ol>
 
-### 1 - Set the keymap for applying comments:
+### 1 - Set the keymap for applying comments
 
 #### Using vim.pack
 
@@ -121,12 +121,12 @@ require('sophisticated-commentary').setup({
 })
 ```
 There are 4 different values for the block comment threshold:<br>
-<dd>
+<dl>
     <dd>Never do a block comment (language doesn't have block comments)</dd>
     <dd>The language supports multiddne docstrings, but not block comments (python)</dd>
     <dd>The language support block comments (c, javascript)</dd>
     <dd>The language does not support inline comments, so only block comments are allowed (html, xml)</dd>
-</dd>
+</dl>
 
 Every language with a blockCommentThreshold at least as large as the one you set in setup will always do block comments. The languages with a blockCommentThreshold exactly one below the one you set will only do block comments for multiline comments. Languages with a blockCommentThreshold of `0` will never apply block comments. Languages with a blockCommentThreshold will always apply block comments. The default `blockCommentThreshold` is `2`.<br>
 By default, block comments will be applied to multiline C comments, but not to multiline python comments. This behavior is displayed below:
