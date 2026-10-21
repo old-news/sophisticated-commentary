@@ -122,10 +122,10 @@ require('sophisticated-commentary').setup({
 ```
 There are 4 different values for the block comment threshold:<br>
 <dl>
-    <dd>Never do a block comment (language doesn't have block comments)</dd>
-    <dd>The language supports multiddne docstrings, but not block comments (python)</dd>
-    <dd>The language support block comments (c, javascript)</dd>
-    <dd>The language does not support inline comments, so only block comments are allowed (html, xml)</dd>
+    <dd>0 &mdash; Never do a block comment (language doesn't have block comments)</dd>
+    <dd>1 &mdash; The language supports multiddne docstrings, but not block comments (python)</dd>
+    <dd>2 &mdash; The language support block comments (c, javascript)</dd>
+    <dd>3 &mdash; The language does not support inline comments, so only block comments are allowed (html, xml)</dd>
 </dl>
 
 Every language with a blockCommentThreshold at least as large as the one you set in setup will always do block comments. The languages with a blockCommentThreshold exactly one below the one you set will only do block comments for multiline comments. Languages with a blockCommentThreshold of `0` will never apply block comments. Languages with a blockCommentThreshold will always apply block comments. The default `blockCommentThreshold` is `2`.<br>
