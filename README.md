@@ -21,9 +21,10 @@ require('sophisticated-commentary').setup()
 }
 ```
 
----
 
 You're all set!
+
+---
 
 ## Usage
 Simply type `Ctrl+/` in any mode to comment/uncomment the current line.
@@ -38,8 +39,7 @@ You can apply the following customizations:
     <li>Set how block comments are applied</li>
 </ol>
 
-### 1
-Set the keymap for applying comments:
+### 1 - Set the keymap for applying comments:
 
 #### Using vim.pack
 
@@ -61,8 +61,8 @@ opts = {
 
 This example maps `Ctrl+3` to the comment function.
 
-### 2
-Remove comment decorators<br>
+### 2 - Remove comment decorators
+
 To remove comment decorators, simply set the noBlockDecorators value to false:
 ```lua
 require('sophisticated-commentary').setup({
@@ -77,8 +77,7 @@ The '*'s (asterisks) in the example below which are not on the first and last li
  */
 ```
 
-### 3
-Set the comment text for specific filetypes<br>
+### 3 - Set the comment text for specific filetypes<br>
 If the language you're using doesn't have the correct text for comments, you can manually change it. Here's an example using `vim.pack`
 
 ```lua
@@ -114,8 +113,7 @@ require('sophisticated-commentary').setup({
 })
 ```
 
-### 4
-Set how block comments are applied
+### 4 - Set how block comments are applied
 This determines when block comments are applied instead of inline comments. This is set by the blockCommentThreshold value:
 ```lua
 require('sophisticated-commentary').setup({
@@ -123,10 +121,12 @@ require('sophisticated-commentary').setup({
 })
 ```
 There are 4 different values for the block comment threshold:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;0 - Never do a block comment (language doesn't have block comments)
-&nbsp;&nbsp;&nbsp;&nbsp;1 - The language supports multiline docstrings, but not block comments (python)
-&nbsp;&nbsp;&nbsp;&nbsp;2 - The language support block comments (c, javascript)
-&nbsp;&nbsp;&nbsp;&nbsp;3 - The language does not support inline comments, so only block comments are allowed (html, xml)
+<dd>
+    <dd>Never do a block comment (language doesn't have block comments)</dd>
+    <dd>The language supports multiddne docstrings, but not block comments (python)</dd>
+    <dd>The language support block comments (c, javascript)</dd>
+    <dd>The language does not support inline comments, so only block comments are allowed (html, xml)</dd>
+</dd>
 
 Every language with a blockCommentThreshold at least as large as the one you set in setup will always do block comments. The languages with a blockCommentThreshold exactly one below the one you set will only do block comments for multiline comments. Languages with a blockCommentThreshold of `0` will never apply block comments. Languages with a blockCommentThreshold will always apply block comments. The default `blockCommentThreshold` is `2`.<br>
 By default, block comments will be applied to multiline C comments, but not to multiline python comments. This behavior is displayed below:
